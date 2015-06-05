@@ -34,7 +34,7 @@ def Start():
 	#HTTP.CacheTime = CACHE_1HOUR
 	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0'
 	HTTP.Headers['Referer'] = 'http://rainierland.com/'
-	HTTP.Headers['Cookie'] = '__cfduid=db726246b62818716d5ca27ba3959f0681433395277; cf_clearance=5833a7a00d22080a3b869f2697abc696b6f44099-1433395277-86400'
+	HTTP.Headers['Cookie'] = '__cfduid=df95bdf30de2e9993177b68dc253bef201433472926; cf_clearance=9eaeca712f6666a69413cbcd63eaf593e2bf6581-1433472935-86400'
 	
 ######################################################################################
 # Menu hierarchy
