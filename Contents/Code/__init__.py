@@ -31,10 +31,12 @@ def Start():
 	VideoClipObject.thumb = R(ICON_MOVIES)
 	VideoClipObject.art = R(ART)
 	
+	HTTP.ClearCookies()
+	HTTP.Headers['Cookie'] = "location.href=1"
 	#HTTP.CacheTime = CACHE_1HOUR
 	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0'
 	HTTP.Headers['Referer'] = 'http://rainierland.com/'
-	HTTP.Headers['Cookie'] = '__cfduid=df95bdf30de2e9993177b68dc253bef201433472926; cf_clearance=9eaeca712f6666a69413cbcd63eaf593e2bf6581-1433472935-86400'
+	HTTP.Headers['Cookie'] = 'cf_clearance=3d217e8937d17db87dc5a47aa5d5adce86e8fac9-1433528584-86400'
 	
 ######################################################################################
 # Menu hierarchy
