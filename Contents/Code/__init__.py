@@ -36,7 +36,7 @@ def Start():
 	#HTTP.CacheTime = CACHE_1HOUR
 	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0'
 	HTTP.Headers['Referer'] = 'http://rainierland.com/'
-	HTTP.Headers['Cookie'] = 'cf_clearance=3d217e8937d17db87dc5a47aa5d5adce86e8fac9-1433528584-86400'
+	HTTP.Headers['Cookie'] = 'cf_clearance=' + Prefs['cookie']
 	
 ######################################################################################
 # Menu hierarchy
@@ -53,34 +53,9 @@ def MainMenu():
 
 	return oc
 
-@route(PREFIX + "/searchQueueMenu")
-def SearchQueueMenu(title):
-	oc2 = ObjectContainer(title2='Search Using Term')
-	#add a way to clear bookmarks list
-	oc2.add(DirectoryObject(
-		key = Callback(ClearSearches),
-		title = "Clear Search Queue",
-		thumb = R(ICON_SEARCH),
-		summary = "CAUTION! This will clear your entire search queue list!"
-		)
-	)
-	for each in Dict:
-		query = Dict[each]
-		#Log("each-----------" + each)
-		#Log("query-----------" + query)
-		if each.find(TITLE.lower()) != -1 and 'MyCustomSearch' in each and query != 'removed':
-			oc2.add(DirectoryObject(key = Callback(Search, query = query, page_count=1), title = query, thumb = R(ICON_SEARCH))
-		)
-
-	return oc2
-
-	
 @route(PREFIX + "/showMenu")
 def ShowMenu(title):
 
-	data = HTTP.Request(BASE_URL)
-	#Log("page ------" + data)
-	
 	oc2 = ObjectContainer(title2=title)
 	oc2.add(DirectoryObject(key = Callback(SortMenu, title = 'Newest', page_count = 0), title = 'Newest', thumb = R(ICON_MOVIES)))
 	oc2.add(DirectoryObject(key = Callback(SortMenu, title = 'Categories', page_count = 0), title = 'Categories', thumb = R(ICON_MOVIES)))
@@ -89,7 +64,6 @@ def ShowMenu(title):
 	
 	return oc2
 	
-
 @route(PREFIX + "/sortMenu")
 def SortMenu(title, page_count):
 	oc = ObjectContainer(title2=title)
@@ -465,3 +439,23 @@ def Search(query, page_count):
 	return oc
 	
 ####################################################################################################
+@route(PREFIX + "/searchQueueMenu")
+def SearchQueueMenu(title):
+	oc2 = ObjectContainer(title2='Search Using Term')
+	#add a way to clear bookmarks list
+	oc2.add(DirectoryObject(
+		key = Callback(ClearSearches),
+		title = "Clear Search Queue",
+		thumb = R(ICON_SEARCH),
+		summary = "CAUTION! This will clear your entire search queue list!"
+		)
+	)
+	for each in Dict:
+		query = Dict[each]
+		#Log("each-----------" + each)
+		#Log("query-----------" + query)
+		if each.find(TITLE.lower()) != -1 and 'MyCustomSearch' in each and query != 'removed':
+			oc2.add(DirectoryObject(key = Callback(Search, query = query, page_count=1), title = query, thumb = R(ICON_SEARCH))
+		)
+
+	return oc2
