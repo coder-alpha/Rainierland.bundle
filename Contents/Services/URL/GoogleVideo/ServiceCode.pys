@@ -1,0 +1,58 @@
+import string, re
+
+HTTP_HEADERS = {
+	'Accept	text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+	'Accept-Encoding:	gzip, deflate',
+	'Accept-Language:	en-US,en;q=0.5',
+	'Connection:		keep-alive',
+	'Referer:		http://www.rainierland.com',
+	'User-Agent:		Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0'
+}
+
+########################################################################################
+def NormalizeURL(url):
+
+	return url
+
+########################################################################################
+def MetadataObjectForURL(url):
+	
+	urls = url.split('&VidRes=')
+	furl = urls[0]
+	res =  urls[1].replace('p','')
+	#Log("url-----------" + furl)
+	
+	title = 'GoogleVideo Redirect Page'
+	summary = 'Summary info Page'
+		
+	return VideoClipObject(
+		title = title,
+		url = furl,
+		summary = summary,
+		thumb = Resource.ContentsOfURLWithFallback(url = 'thumb', fallback='icon-cover.png')
+	)
+	
+########################################################################################
+def MediaObjectsForURL(url):
+	
+	urls = url.split('&VidRes=')
+	furl = urls[0]
+	res =  urls[1].replace('p','')
+	
+	return [
+		MediaObject(
+			container = Container.MP4,
+			video_codec = VideoCodec.H264,
+			video_resolution = res,
+			audio_codec = AudioCodec.AAC,
+			audio_channels = 2,
+			optimized_for_streaming = True,
+			parts = [PartObject(key=Callback(PlayVideo, url=furl + '&vid=file.mp4'))]
+		)
+	]
+
+########################################################################################
+@indirect
+def PlayVideo(url):
+
+	return IndirectResponse(VideoClipObject, key=url)
