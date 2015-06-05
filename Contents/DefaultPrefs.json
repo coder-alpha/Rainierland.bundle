@@ -1,0 +1,8 @@
+[
+	{
+        "id":       "cookie",
+        "label":    "Clearance Cookie",
+        "type":     "text",
+        "default":  "3d217e8937d17db87dc5a47aa5d5adce86e8fac9-1433528584-86400"
+    },
+]
