@@ -1,8 +1,14 @@
 [
 	{
-        "id":       "cookie",
+        "id":       "cookie_cfduid",
         "label":    "Clearance Cookie",
         "type":     "text",
-        "default":  "3d217e8937d17db87dc5a47aa5d5adce86e8fac9-1433528584-86400"
+        "default":  "da44c190243e83da0fd1ad1f8c1799d1b1433514302"
+    },
+	{
+        "id":       "cookie_clearance",
+        "label":    "Clearance Cookie",
+        "type":     "text",
+        "default":  "eb4b25016906e13bcfe05009cd6d92cfed80caba-1433555317-86400"
     },
 ]
