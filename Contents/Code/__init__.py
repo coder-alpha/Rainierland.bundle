@@ -36,7 +36,7 @@ def Start():
 	#HTTP.CacheTime = CACHE_1HOUR
 	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0'
 	HTTP.Headers['Referer'] = 'http://rainierland.com/'
-	HTTP.Headers['Cookie'] = 'cf_clearance=' + Prefs['cookie']
+	HTTP.Headers['Cookie'] = '__cfduid=' + Prefs['cookie_cfduid'] + '; cf_clearance=' + Prefs['cookie_clearance']
 	
 ######################################################################################
 # Menu hierarchy
