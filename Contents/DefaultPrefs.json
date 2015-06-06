@@ -1,7 +1,7 @@
 [
 	{
         "id":       "cookie_cfduid",
-        "label":    "Clearance Cookie",
+        "label":    "cfduid Cookie",
         "type":     "text",
         "default":  "da44c190243e83da0fd1ad1f8c1799d1b1433514302"
     },
