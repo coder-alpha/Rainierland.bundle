@@ -35,21 +35,39 @@ def MetadataObjectForURL(url):
 ########################################################################################
 def MediaObjectsForURL(url):
 	
-	urls = url.split('&VidRes=')
-	furl = urls[0]
-	res =  urls[1].replace('p','')
+	if 'VidRes' in url:
+		urls = url.split('&VidRes=')
+		furl = urls[0]
+		res =  urls[1].replace('p','')
+		return [
+			MediaObject(
+				container = Container.MP4,
+				video_codec = VideoCodec.H264,
+				video_resolution = res,
+				audio_codec = AudioCodec.AAC,
+				audio_channels = 2,
+				optimized_for_streaming = True,
+				parts = [PartObject(key=Callback(PlayVideo, url=furl))]
+			)
+		]
+	else:
+		urls = url.split('&PartVids=')
+		furl = urls[0]
+		res =  urls[1]
+		res_n = res.split('|')
+		for eachres in res_n:
+			return [
+				MediaObject(
+					container = Container.MP4,
+					video_codec = VideoCodec.H264,
+					video_resolution = eachres,
+					audio_codec = AudioCodec.AAC,
+					audio_channels = 2,
+					optimized_for_streaming = True,
+					parts = [PartObject(key=Callback(PlayVideo, url=furl))]
+				)
+			]
 	
-	return [
-		MediaObject(
-			container = Container.MP4,
-			video_codec = VideoCodec.H264,
-			video_resolution = res,
-			audio_codec = AudioCodec.AAC,
-			audio_channels = 2,
-			optimized_for_streaming = True,
-			parts = [PartObject(key=Callback(PlayVideo, url=furl + '&vid=file.mp4'))]
-		)
-	]
 
 ########################################################################################
 @indirect

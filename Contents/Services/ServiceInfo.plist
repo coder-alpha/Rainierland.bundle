@@ -21,6 +21,22 @@
 				<string>https://redirector.googlevideo.com/.+</string>
 				<string>https://www.googlevideo.com/.+</string>
 				<string>https://googlevideo.com/.+</string>
+				<string>http://lh3.googleusercontent.com/.+</string>
+				<string>http://www.googleusercontent.com/.+</string>
+				<string>http://googleusercontent.com/.+</string>
+				<string>https://lh3.googleusercontent.com/.+</string>
+				<string>https://www.googleusercontent.com/.+</string>
+				<string>https://googleusercontent.com/.+</string>
+			</array>
+		</dict>
+		<key>Openload</key>
+		<dict>
+			<key>URLPatterns</key>
+			<array>
+				<string>http://openload.io/.+</string>
+				<string>http://www.openload.io/.+</string>
+				<string>https://openload.io/.+</string>
+				<string>https://www.openload.io/.+</string>
 			</array>
 		</dict>
 	</dict>

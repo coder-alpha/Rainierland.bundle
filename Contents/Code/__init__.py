@@ -1,6 +1,6 @@
 ######################################################################################
 #
-#	Rainierland.com - v0.01
+#	Rainierland.com - v0.02
 #
 ######################################################################################
 import re
@@ -19,6 +19,19 @@ ICON_QUEUE = "icon-queue.png"
 ICON_UNAV = "MoviePosterUnavailable.jpg"
 BASE_URL = "http://www.rainierland.com"
 
+import os
+import sys
+import urllib
+
+try:
+	path = os.getcwd().split("?\\")[1].split('Plug-in Support')[0]+"Plug-ins/Rainierland.bundle/Contents/Code/Modules/Rainierland"
+except:
+	path = os.getcwd().split("Plug-in Support")[0]+"Plug-ins/Rainierland.bundle/Contents/Code/Modules/Rainierland"
+if path not in sys.path:
+	sys.path.append(path)
+
+import cfscrape
+
 ######################################################################################
 # Set global variables
 
@@ -31,12 +44,10 @@ def Start():
 	VideoClipObject.thumb = R(ICON_MOVIES)
 	VideoClipObject.art = R(ART)
 	
-	HTTP.ClearCookies()
-	HTTP.Headers['Cookie'] = "location.href=1"
-	#HTTP.CacheTime = CACHE_1HOUR
-	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0'
-	HTTP.Headers['Referer'] = 'http://rainierland.com/'
-	HTTP.Headers['Cookie'] = '__cfduid=' + Prefs['cookie_cfduid'] + '; cf_clearance=' + Prefs['cookie_clearance']
+	HTTP.Headers['User-Agent'] = 'Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36'
+	HTTP.Headers['Referer'] = 'http://rainierland.com/'	
+	cookies = cfscrape.get_cookie_string(BASE_URL + '/')
+	HTTP.Headers['Cookie'] = cookies
 	
 ######################################################################################
 # Menu hierarchy
@@ -47,7 +58,6 @@ def MainMenu():
 	oc = ObjectContainer(title2=TITLE)
 	oc.add(DirectoryObject(key = Callback(ShowMenu, title = 'Movies / TV Shows'), title = 'Movies / TV Shows', thumb = R(ICON_MOVIES)))
 	oc.add(DirectoryObject(key = Callback(Bookmarks, title="My Movie Bookmarks"), title = "My Movie Bookmarks", thumb = R(ICON_QUEUE)))
-	#oc.add(PrefsObject(title = 'Preferences', thumb = R('icon-prefs.png')))
 	oc.add(DirectoryObject(key = Callback(SearchQueueMenu, title = 'Search Queue'), title = 'Search Queue', summary='Search using saved search terms', thumb = R(ICON_SEARCH)))
 	oc.add(InputDirectoryObject(key = Callback(Search, page_count=1), title='Search', summary='Search Movies', prompt='Search for...'))
 
@@ -197,62 +207,31 @@ def ShowCategory(title, url, page_count, search):
 @route(PREFIX + "/episodedetail")
 def EpisodeDetail(title, url, thumb, summary):
 	
-	thumb = 'http://www.taylored-media.com/wp-content/uploads/2011/11/unavailable_poster.jpg'
 	title = unicode(title)
 	oc = ObjectContainer(title2 = title)
 	
 	page_data = HTML.ElementFromURL(url)
 	fvidUrl = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//@src")[0]
 	page_data0 = HTTP.Request(BASE_URL + '/' + fvidUrl.replace('/js','js')).content
-	Log(unicode(page_data0))
+
 	try:
 		page_data = page_data0
-		page_data = page_data.replace('var v=\'','')
-		page_data = page_data.replace('\';document.write(v);','')
-		#page_data = page_data.replace('<video id="MY_VIDEO_1" class="video-js vjs-default-skin" controls autoplay preload="auto" oncontextmenu="return false" data-setup="{}">','')
-		elem_data = HTML.ElementFromString(page_data)
-		vidUrl = elem_data.xpath(".//source")
-		for eachVid in vidUrl:
-			vUrl = eachVid.xpath(".//@src")[0]
-			if 'http' in vUrl:
-				#Log(vUrl)
-				res = '720p'
-				try:
-					res = eachVid.xpath(".//@data-res")[0]
-				except:
-					res = '720p'
-				try:
-					oc.add(VideoClipObject(
-						url = vUrl + '&VidRes=' + res,
-						title = title + ' ' + res,
-						thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
-						summary = summary
-					)
-				)
-				except:
-					vidUrl = ""
-	except:
-		vidUrl = ""
-	
-	if len(oc) == 0:
-		try:
-			page_data = page_data0
-			page_data = page_data.replace('%2F','/')
-			page_data = page_data.replace('%3A',':')
-			page_data = page_data.replace('%3F','?')
-			page_data = page_data.replace('%3D','=')
-			page_data = page_data.replace('%26','&')
-			page_data = page_data.replace('%252C',',')
-			
-			#Log(page_data)
-			vidUrl = page_data.split(';')
+		if 'googlevideo' in page_data and 'fmt_stream_map' not in page_data:
+			page_data = page_data.replace('var v=\'','')
+			page_data = page_data.replace('\';document.write(v);','')
+			elem_data = HTML.ElementFromString(page_data)
+			vidUrl = elem_data.xpath(".//source")
 			for eachVid in vidUrl:
-				vUrl = eachVid
+				vUrl = eachVid.xpath(".//@src")[0]
+				
 				if 'http' in vUrl:
-					
-					vUrl = vUrl.replace('fmt_stream_map=18%7C','')
-					vUrl = vUrl.replace('&amp','')
+					#Log("vUrl ---------- " + vUrl)
 					res = '720p'
+					try:
+						res = eachVid.xpath(".//@data-res")[0]
+					except:
+						res = '720p'
+					
 					try:
 						oc.add(VideoClipObject(
 							url = vUrl + '&VidRes=' + res,
@@ -263,6 +242,166 @@ def EpisodeDetail(title, url, thumb, summary):
 					)
 					except:
 						vidUrl = ""
+	except:
+		vidUrl = ""
+	
+	try:
+		page_data = page_data0
+		if 'googleusercontent' in page_data:
+			page_data = page_data.replace('var v=\'','')
+			page_data = page_data.replace('\';document.write(v);','')
+			elem_data = HTML.ElementFromString(page_data)
+			vidUrl = elem_data.xpath(".//source")
+			for eachVid in vidUrl:
+				vUrl = eachVid.xpath(".//@src")[0]
+				if 'http' in vUrl:
+					#Log("vUrl ---------- " + vUrl)
+					res = '720p'
+					try:
+						res = eachVid.xpath(".//@data-res")[0]
+					except:
+						res = '720p'
+					try:
+						oc.add(VideoClipObject(
+							url = vUrl + '&VidRes=' + res,
+							title = title + ' ' + res,
+							thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+							summary = summary
+						)
+					)
+					except:
+						vidUrl = ""
+	except:
+		vidUrl = ""
+	
+	if len(oc) == 0:
+		try:
+			page_data = page_data0
+			if 'googlevideo' in page_data and 'fmt_stream_map' in page_data:
+				page_data = urllib.unquote(page_data) 
+				#page_data = page_data.replace('%2F','/')
+				#page_data = page_data.replace('%3A',':')
+				#page_data = page_data.replace('%3F','?')
+				#page_data = page_data.replace('%3D','=')
+				#page_data = page_data.replace('%26','&')
+				#page_data = page_data.replace('%252C',',')
+				page_data = page_data.replace('%2C',',')
+				page_data = page_data.replace('fmt_stream_map=',',')
+				
+				rem_str = re.findall('key=ck2(.*?)http', page_data, re.DOTALL)
+				for rem in rem_str:
+					page_data = page_data.replace(rem, '|')
+					#Log("removed ----- " + rem)
+				
+				page_parts = page_data.split(';')
+				fmts = page_parts[0]
+				#Log(fmts)
+				fmts = fmts.replace('var flv=\'fmt_list=','')
+				fmts = fmts.replace('&amp','')
+				
+				fmts = fmts.split(',')
+				page_data = page_parts[1]
+				vidUrl = page_data.split('|')
+				
+				c=0
+				for eachVid in vidUrl:
+					vUrl = eachVid.replace('&amp','')
+					if 'http' in vUrl:
+						
+						keys = fmts[c].split('/')
+						#Log("vUrl ---------- " + vUrl)
+						
+						res_wh = keys[1]
+						res_h = res_wh.split('x')[1]
+						res = 'sd'
+						
+						if res_h == '1080':
+							res = '1080p'
+						elif res_h == '720':
+							res = '720p'
+						
+						#Log(res_wh)
+						c = c+1
+						try:
+							oc.add(VideoClipObject(
+								url = vUrl + '&VidRes=' + res,
+								title = title + ' (' + res_wh + ')',
+								thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+								summary = summary
+							)
+						)
+						except:
+							vidUrl = ""
+		except:
+			vidUrl = ""
+	
+	if len(oc) == 0:
+		try:
+			page_data = page_data0
+			page_data = page_data.replace('var i=\'','')
+			page_data = page_data.replace('\';document.write(i);','')
+			page_data = unicode(page_data)
+			#Log(page_data)
+			if 'openload.io' in page_data:
+				elem_data = HTML.ElementFromString(page_data)
+				vidUrl = elem_data.xpath(".//@src")[0]
+				#Log("vidUrl ---------- " + vidUrl)
+				if 'http' in vidUrl:
+					res = '720p'
+					try:
+						oc.add(VideoClipObject(
+							url = vidUrl,
+							title = title + ' ' + res,
+							thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+							summary = summary
+						)
+					)
+					except:
+						vidUrl = ""
+		except:
+			vidUrl = ""
+	
+	if len(oc) == 0:
+		try:
+			page_data = page_data0
+			if 'googlevideo' in page_data:
+				#Log(page_data)
+				page_data = page_data.replace('var v=\'','')
+				page_data = page_data.replace('\';document.write(v);','')
+				vidUrl = page_data.split(';')
+				for eachVid in vidUrl:
+					vUrl = eachVid
+					if 'http' in vUrl:
+						
+						res = '720p'
+						vUrl = vUrl.replace('\n','')
+						
+						if '1080p' in vUrl:
+							res = '1080p'
+						elif '720p' in vUrl:
+							res = '720p'
+						elif '480p' in vUrl:
+							res = '480p'
+						
+						vUrl = vUrl.replace('var vsrc1080p = \'','')
+						vUrl = vUrl.replace('var vsrc720p = \'','')
+						vUrl = vUrl.replace('var vsrc480p = \'','')
+						vUrl = vUrl.replace('\n','')
+						vUrl = vUrl.replace('\'','')
+						vUrl = vUrl.lstrip()
+						
+						#Log(vUrl)
+						
+						try:
+							oc.add(VideoClipObject(
+								url = vUrl + '&VidRes=' + res,
+								title = title + ' ' + res,
+								thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+								summary = summary
+							)
+						)
+						except:
+							vidUrl = ""
 		except:
 			vidUrl = ""
 	
@@ -409,13 +548,13 @@ def Search(query, page_count):
 
 		for each in elem:
 			furl = each.xpath(".//div[@class='thumb']//@href")[0]
-			Log("furl -------- " + furl)
+			#Log("furl -------- " + furl)
 			title = each.xpath(".//div[@class='thumb']//a//@title")[0]
-			Log("title -------- " + title)
+			#Log("title -------- " + title)
 			thumb = each.xpath(".//div[@class='thumb']//img//@src")[0]
-			Log("thumb -------- " + thumb)
+			#Log("thumb -------- " + thumb)
 			summary = each.xpath(".//div[@class='data']//p[@class='entry-summary']//text()")[0]
-			Log("summary -------- " + summary)
+			#Log("summary -------- " + summary)
 			oc.add(DirectoryObject(
 				key = Callback(EpisodeDetail, title = title, url = furl, thumb = thumb, summary = summary),
 				title = title,

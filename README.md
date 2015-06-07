@@ -9,7 +9,8 @@ System Requirements
 - **Plex Media Server:**
 	- Tested Working:
 		- Windows
-		- Linux (Ubuntu)
+		- Linux (Ubuntu) Installation of a Javascript runtime may be required
+		  sudo apt-get install nodejs (installs nodejs)
 - **Plex Clients:**
 	- Tested Working:
 		- Plex Home Theater
@@ -36,5 +37,8 @@ How To Install
 Known Issues
 ==============
 - Thumbnails of items are not fetched due to 302 redirection (cookie/header not being used)
-- Some movies will not play, currently depending on where hosted.
+- Some movies will not play, currently depending on where hosted or removed.
 
+Acknowledgements
+==============
+Thanks to jwsolve for inputs
