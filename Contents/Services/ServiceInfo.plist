@@ -3,14 +3,6 @@
 <dict>
 	<key>URL</key>
 	<dict>
-		<key>Rainierland</key>
-		<dict>
-			<key>URLPatterns</key>
-			<array>
-				<string>http://www.rainierland.to/.+</string>
-				<string>http://rainierland.to/.+</string>
-			</array>
-		</dict>
 		<key>GoogleVideo</key>
 		<dict>
 			<key>URLPatterns</key>
@@ -27,6 +19,7 @@
 				<string>https://lh3.googleusercontent.com/.+</string>
 				<string>https://www.googleusercontent.com/.+</string>
 				<string>https://googleusercontent.com/.+</string>
+				<string>https?://([a-z0-9]+[.])*blogspot.com/.+</string>
 			</array>
 		</dict>
 		<key>Openload</key>
@@ -37,6 +30,10 @@
 				<string>http://www.openload.io/.+</string>
 				<string>https://openload.io/.+</string>
 				<string>https://www.openload.io/.+</string>
+				<string>http://openload.co/.+</string>
+				<string>http://www.openload.co/.+</string>
+				<string>https://openload.co/.+</string>
+				<string>https://www.openload.co/.+</string>
 			</array>
 		</dict>
 	</dict>

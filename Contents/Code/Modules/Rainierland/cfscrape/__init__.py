@@ -19,7 +19,7 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-DEFAULT_USER_AGENT = ("Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36")
+DEFAULT_USER_AGENT = ("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0")
 
 class CloudflareAdapter(HTTPAdapter):
     def send(self, request, **kwargs):

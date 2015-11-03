@@ -22,8 +22,8 @@ def MetadataObjectForURL(url):
 	res =  urls[1].replace('p','')
 	#Log("url-----------" + furl)
 	
-	title = 'GoogleVideo Redirect Page'
-	summary = 'Summary info Page'
+	title = urls[2]
+	summary = urls[3]
 		
 	return VideoClipObject(
 		title = title,

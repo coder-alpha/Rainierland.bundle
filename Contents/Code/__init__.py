@@ -1,12 +1,12 @@
 ######################################################################################
 #
-#	Rainierland.com - v0.02
+#	Rainierland.com
 #
 ######################################################################################
-import re
+import re, urllib2, common, updater
 
-TITLE = "Rainierland"
-PREFIX = "/video/rainierland"
+TITLE = common.TITLE
+PREFIX = common.PREFIX
 ART = "art-default.jpg"
 ICON = "icon-rainierland.png"
 ICON_LIST = "icon-list.png"
@@ -17,11 +17,17 @@ ICON_MOVIES = "icon-movies.png"
 ICON_SERIES = "icon-series.png"
 ICON_QUEUE = "icon-queue.png"
 ICON_UNAV = "MoviePosterUnavailable.jpg"
+ICON_PREFS = "icon-prefs.png"
+ICON_UPDATE = "icon-update.png"
+ICON_UPDATE_NEW = "icon-update-new.png"
+ICON_DEL = "icon-delete.png"
 BASE_URL = "http://www.rainierland.com"
 
 import os
 import sys
 import urllib
+from os import listdir
+from os.path import isfile, join
 
 try:
 	path = os.getcwd().split("?\\")[1].split('Plug-in Support')[0]+"Plug-ins/Rainierland.bundle/Contents/Code/Modules/Rainierland"
@@ -44,22 +50,32 @@ def Start():
 	VideoClipObject.thumb = R(ICON_MOVIES)
 	VideoClipObject.art = R(ART)
 	
-	HTTP.Headers['User-Agent'] = 'Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36'
-	HTTP.Headers['Referer'] = 'http://rainierland.com/'	
-	cookies = cfscrape.get_cookie_string(BASE_URL + '/')
-	HTTP.Headers['Cookie'] = cookies
+	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0'
+	HTTP.Headers['Referer'] = 'http://rainierland.com/'
 	
+
 ######################################################################################
 # Menu hierarchy
 
 @handler(PREFIX, TITLE, art=ART, thumb=ICON)
 def MainMenu():
 	
+	cookies = cfscrape.get_cookie_string(BASE_URL + '/')
+	#Log("Cookies used : " + cookies)
+	HTTP.Headers['Cookie'] = cookies
+	
 	oc = ObjectContainer(title2=TITLE)
 	oc.add(DirectoryObject(key = Callback(ShowMenu, title = 'Movies / TV Shows'), title = 'Movies / TV Shows', thumb = R(ICON_MOVIES)))
 	oc.add(DirectoryObject(key = Callback(Bookmarks, title="My Movie Bookmarks"), title = "My Movie Bookmarks", thumb = R(ICON_QUEUE)))
 	oc.add(DirectoryObject(key = Callback(SearchQueueMenu, title = 'Search Queue'), title = 'Search Queue', summary='Search using saved search terms', thumb = R(ICON_SEARCH)))
 	oc.add(InputDirectoryObject(key = Callback(Search, page_count=1), title='Search', summary='Search Movies', prompt='Search for...'))
+	#oc.add(DirectoryObject(key = Callback(updater.menu, title='Update Plugin'), title = 'Update Plugin', thumb = R(ICON_UPDATE)))
+	oc.add(DirectoryObject(key = Callback(DeleteDownloadThumb), title = 'Delete Thumbnails', summary = 'Deletes all Cached Thumbnail images from the disk', thumb = R(ICON_DEL)))
+	oc.add(PrefsObject(title = 'Preferences', thumb = R(ICON_PREFS)))
+	if updater.update_available()[0]:
+		oc.add(DirectoryObject(key = Callback(updater.menu, title='Update Plugin'), title = 'Update (New Available)', thumb = R(ICON_UPDATE_NEW)))
+	else:
+		oc.add(DirectoryObject(key = Callback(updater.menu, title='Update Plugin'), title = 'Update (Running Latest)', thumb = R(ICON_UPDATE)))
 
 	return oc
 
@@ -95,7 +111,7 @@ def SortMenu(title, page_count):
 				key = Callback(EpisodeDetail, title = title, url = url, thumb = thumb, summary = summary),
 				title = title,
 				summary = summary,
-				thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg')
+				thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 				)
 			)
 		page_n = page_data.xpath(".//div[@class='wp-pagenavi']//span[@class='pages']//text()")[0]
@@ -109,21 +125,28 @@ def SortMenu(title, page_count):
 		page_data = HTML.ElementFromURL(BASE_URL)
 		if title == 'Newest':
 			elem = page_data.xpath(".//div[@class='nag cf']//div[contains(@class, 'post-')]")
-
 			for each in elem:
 				url = each.xpath(".//div[@class='thumb']//@href")[0]
 				#Log("url -------- " + url)
 				title = each.xpath(".//div[@class='thumb']//a//@title")[0]
 				#Log("title -------- " + title)
 				thumb = each.xpath(".//div[@class='thumb']//img//@src")[0]
-				#Log("thumb -------- " + thumb)
+				Log("thumb -------- " + thumb)
+				
+				#response = requests.get(thumb, stream=True, headers=HTTP.Headers)
+				#Log("response code: " + str(response.status_code))
+				#if response.status_code == 200:
+				#	response.encoding = 'UTF-8'
+				#	response.raw.decode_content = True
+				#	mythumb = response.text
+
 				summary = each.xpath(".//div[@class='data']//p[@class='entry-summary']//text()")[0]
 				#Log("summary -------- " + summary)
 				oc.add(DirectoryObject(
 					key = Callback(EpisodeDetail, title = title, url = url, thumb = thumb, summary = summary),
 					title = title,
 					summary = summary,
-					thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg')
+					thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 					)
 				)
 		elif title == 'Browse By Genre':
@@ -178,7 +201,7 @@ def ShowCategory(title, url, page_count, search):
 				key = Callback(EpisodeDetail, title = title, url = furl, thumb = thumb, summary = summary),
 				title = title,
 				summary = summary,
-				thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg')
+				thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 				)
 			)
 		page_n = page_data.xpath(".//div[@class='wp-pagenavi']//span[@class='pages']//text()")[0]
@@ -207,13 +230,53 @@ def ShowCategory(title, url, page_count, search):
 @route(PREFIX + "/episodedetail")
 def EpisodeDetail(title, url, thumb, summary):
 	
+	title = title.replace('–',' : ')
 	title = unicode(title)
 	oc = ObjectContainer(title2 = title)
 	
 	page_data = HTML.ElementFromURL(url)
-	fvidUrl = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//@src")[0]
-	page_data0 = HTTP.Request(BASE_URL + '/' + fvidUrl.replace('/js','js')).content
+	
+	try:
+		fvidUrl = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//@src")[0]
+		page_data0 = HTTP.Request(BASE_URL + '/' + fvidUrl.replace('/js','js')).content
+	except:
+		try:
+			page_data0 = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//text()")[0]
+		except:
+			pass
 
+	try:
+		page_data = page_data0
+		if 'blogspot.com' in page_data:
+			page_data = page_data.replace('var v=\'','')
+			page_data = page_data.replace('\';document.write(v);','')
+			elem_data = HTML.ElementFromString(page_data)
+			vidUrl = elem_data.xpath(".//source")
+			for eachVid in vidUrl:
+				vUrl = eachVid.xpath(".//@src")[0]
+				
+				if 'http' in vUrl:
+					#Log("vUrl ---------- " + vUrl)
+					res = '720p'
+					try:
+						res = eachVid.xpath(".//@data-res")[0]
+					except:
+						res = '720p'
+					
+					try:
+						oc.add(VideoClipObject(
+							url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary,
+							title = title + ' ' + res,
+							thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb)),
+							art = DownloadThumbAndReturnLink(thumb),
+							summary = summary
+						)
+					)
+					except:
+						vidUrl = ""
+	except:
+		vidUrl = ""
+			
 	try:
 		page_data = page_data0
 		if 'googlevideo' in page_data and 'fmt_stream_map' not in page_data:
@@ -234,9 +297,10 @@ def EpisodeDetail(title, url, thumb, summary):
 					
 					try:
 						oc.add(VideoClipObject(
-							url = vUrl + '&VidRes=' + res,
+							url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary,
 							title = title + ' ' + res,
-							thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+							thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb)),
+							art = DownloadThumbAndReturnLink(thumb),
 							summary = summary
 						)
 					)
@@ -244,6 +308,7 @@ def EpisodeDetail(title, url, thumb, summary):
 						vidUrl = ""
 	except:
 		vidUrl = ""
+	
 	
 	try:
 		page_data = page_data0
@@ -263,9 +328,10 @@ def EpisodeDetail(title, url, thumb, summary):
 						res = '720p'
 					try:
 						oc.add(VideoClipObject(
-							url = vUrl + '&VidRes=' + res,
+							url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary,
 							title = title + ' ' + res,
-							thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+							thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb)),
+							art = DownloadThumbAndReturnLink(thumb),
 							summary = summary
 						)
 					)
@@ -324,9 +390,10 @@ def EpisodeDetail(title, url, thumb, summary):
 						c = c+1
 						try:
 							oc.add(VideoClipObject(
-								url = vUrl + '&VidRes=' + res,
+								url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary,
 								title = title + ' (' + res_wh + ')',
-								thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+								thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb)),
+								art = DownloadThumbAndReturnLink(thumb),
 								summary = summary
 							)
 						)
@@ -342,7 +409,7 @@ def EpisodeDetail(title, url, thumb, summary):
 			page_data = page_data.replace('\';document.write(i);','')
 			page_data = unicode(page_data)
 			#Log(page_data)
-			if 'openload.io' in page_data:
+			if 'openload.io' in page_data or 'openload.co' in page_data:
 				elem_data = HTML.ElementFromString(page_data)
 				vidUrl = elem_data.xpath(".//@src")[0]
 				#Log("vidUrl ---------- " + vidUrl)
@@ -352,7 +419,8 @@ def EpisodeDetail(title, url, thumb, summary):
 						oc.add(VideoClipObject(
 							url = vidUrl,
 							title = title + ' ' + res,
-							thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+							thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb)),
+							art = DownloadThumbAndReturnLink(thumb),
 							summary = summary
 						)
 					)
@@ -394,9 +462,10 @@ def EpisodeDetail(title, url, thumb, summary):
 						
 						try:
 							oc.add(VideoClipObject(
-								url = vUrl + '&VidRes=' + res,
+								url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary,
 								title = title + ' ' + res,
-								thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg'),
+								thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb)),
+								art = DownloadThumbAndReturnLink(thumb),
 								summary = summary
 							)
 						)
@@ -457,7 +526,7 @@ def Bookmarks(title):
 					key = Callback(EpisodeDetail, title = title, url = ffurl, thumb = thumb, summary = summary),
 					title = title,
 					summary = summary,
-					thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg')
+					thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 					)
 				)
 	
@@ -559,7 +628,7 @@ def Search(query, page_count):
 				key = Callback(EpisodeDetail, title = title, url = furl, thumb = thumb, summary = summary),
 				title = title,
 				summary = summary,
-				thumb = Resource.ContentsOfURLWithFallback(url = thumb, fallback='MoviePosterUnavailable.jpg')
+				thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 				)
 			)
 		page_n = page_data.xpath(".//div[@class='wp-pagenavi']//span[@class='pages']//text()")[0]
@@ -598,3 +667,67 @@ def SearchQueueMenu(title):
 		)
 
 	return oc2
+
+####################################################################################################
+@route(PREFIX + "/downloadthumbandreturnlink")
+def DownloadThumbAndReturnLink(url):
+
+	filename = 'temp.jpg'
+	try:
+		filename = url.split('/')
+		filename = filename[len(filename)-1]
+	except:
+		pass
+		
+	filename = 'cache_'+filename
+	
+	try:
+		path = os.getcwd().split("?\\")[1].split('Plug-in Support')[0]+"Plug-ins/Rainierland.bundle/Contents/Resources"
+	except:
+		path = os.getcwd().split("Plug-in Support")[0]+"Plug-ins/Rainierland.bundle/Contents/Resources"
+	tempDir = path
+	
+	downloadLocation = Core.storage.join_path(tempDir, filename)
+
+	if not Core.storage.file_exists(downloadLocation):
+		try:
+			resp = HTTP.Request(url)
+			f = os.open(downloadLocation, os.O_WRONLY|os.O_CREAT|os.O_BINARY)
+			os.write(f, resp.content)
+			os.close(f)
+			#Log("File downloaded from : ------ " + url + " to " + downloadLocation)
+		except:
+			pass
+			return ICON_UNAV
+	else:
+		pass
+		#Log("Previous downloaded file : ------ " + url + " available " + downloadLocation)
+	return filename
+
+
+@route(PREFIX + "/deletedownloadthumb")
+def DeleteDownloadThumb():
+
+	try:
+		tempDir = os.getcwd().split("?\\")[1].split('Plug-in Support')[0]+"Plug-ins/Rainierland.bundle/Contents/Resources"
+	except:
+		tempDir = os.getcwd().split("Plug-in Support")[0]+"Plug-ins/Rainierland.bundle/Contents/Resources"
+		
+	onlyfiles = [i for i in os.listdir(tempDir) if os.path.isfile(os.path.join(tempDir,i)) and i.startswith('cache_')]
+	
+	msg='All Cached Thumbnail files deleted'
+	for f in onlyfiles:
+		
+		file = Core.storage.join_path(tempDir, str(f))
+		#Log("file --------------- " + file)
+		
+		if f.startswith('cache_'):
+			try:
+				os.remove( file )
+				#Log("file deleted --------------- " + file)
+			except:
+				#Log("file NOT deleted --------------- " + file)
+				msg='Cached Thumbnail files NOT deleted'
+				pass
+				
+	return ObjectContainer(header="Cached Thumbnails", message=msg)
