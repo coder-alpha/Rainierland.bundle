@@ -33,6 +33,9 @@ class CloudflareAdapter(HTTPAdapter):
         # Check if Cloudflare anti-bot is on
         if "a = document.getElementById('jschl-answer');" in resp.text:
             return self.solve_cf_challenge(resp, request.headers, resp.cookies, **kwargs)
+        if ("URL=/cdn-cgi/" in resp.headers.get("Refresh", "") and
+             resp.headers.get("Server", "") == "cloudflare-nginx" ):
+            return self.solve_cf_challenge(resp, request.headers, resp.cookies, **kwargs)
 
         # Otherwise, no Cloudflare anti-bot detected
         return resp
@@ -43,7 +46,7 @@ class CloudflareAdapter(HTTPAdapter):
             request.headers["User-Agent"] = DEFAULT_USER_AGENT
 
     def format_js(self, js):
-        js = js.replace("\n", "")
+        js = re.sub(r"[\n\\']", "", js)
         if "Node" in execjs.get().name:
             return "return require('vm').runInNewContext('%s');" % js
         return js.replace("parseInt", "return parseInt")
@@ -99,17 +102,26 @@ def create_scraper(session=None):
     sess.mount("https://", adapter)
     return sess
 
-def get_tokens(url):
+def get_tokens(url, user_agent=None):
     scraper = create_scraper()
-    resp = scraper.get(url)
-    if not resp.ok:
-        raise ValueError("'%s' returned error %d, could not collect tokens." % (url, resp.status_code))
+    user_agent = user_agent or DEFAULT_USER_AGENT
+    scraper.headers["User-Agent"] = user_agent
+    
+    try:
+        resp = scraper.get(url)
+        resp.raise_for_status()
+    except Exception:
+        print("'%s' returned error %d, could not collect tokens.\n" % (url, resp.status_code))
+        raise
 
-    return { 
-             "__cfduid": resp.cookies.get("__cfduid", ""),
-             "cf_clearance": scraper.cookies.get("cf_clearance", "")
-           }
+    return ( { 
+                 "__cfduid": resp.cookies.get("__cfduid", ""),
+                 "cf_clearance": scraper.cookies.get("cf_clearance", "")
+             },
+             user_agent
+           )
 
-def get_cookie_string(url):
-    tokens = get_tokens(url)
+def get_cookie_string(url, user_agent=None):
+    tokens, user_agent = get_tokens(url, user_agent=user_agent)
     return "; ".join("=".join(pair) for pair in tokens.items())
+	
