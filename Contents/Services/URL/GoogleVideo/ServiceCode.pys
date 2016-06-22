@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import string, re
 
 HTTP_HEADERS = {
 	'Accept	text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -28,7 +27,6 @@ def MetadataObjectForURL(url):
 
 	time_stamp = int(Datetime.TimestampFromDatetime(Datetime.Now()))
 	thumb = '/:/plugins/com.plexapp.plugins.rainierland/resources/%s?t=%s' %(urls[4], str(time_stamp))
-	Log(thumb)
 
 	return VideoClipObject(
 		title = title,
