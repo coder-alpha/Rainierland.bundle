@@ -20,7 +20,7 @@ def menu(title):
 	url = 'https://github.com/{0}/archive/{1}.zip'.format(common.GITHUB_REPOSITORY, tag)
 	oc.add(DirectoryObject(key=Callback(update, url=url, ver=ver), title='Plugin version: {0}'.format(version_result_str), summary=version_result_summary, thumb=get_test_thumb(version_result)))
 	oc.add(DirectoryObject(key=Callback(updateold,title='Older Releases (Pre '+ver+')', feed=FEED_URL, ver=ver), title= 'Pre '+ ver + ' Releases', summary='Update to an Older Release. Please note an older release might not have updater support.', thumb=R(ICON_RELEASES)))
-	
+
 	return oc
 
 # This gets the release name
@@ -40,7 +40,7 @@ def get_latest_version():
 def update_available():
 	latest_version_str, summ, tag = get_latest_version()
 	latest_version_str = getOnlyVersionNumber(latest_version_str)
-	
+
 	if latest_version_str:
 		#latest_version  = map(int, latest_version_str.split('.'))
 		#current_version = map(int, common.VERSION.split('.'))
@@ -52,13 +52,13 @@ def update_available():
 ################################################################################
 @route(common.PREFIX + '/update')
 def update(url, ver):
-		
+
 	if ver:
 		msg = 'Plugin updated to version {0}'.format(ver)
 		msgH = 'Update successful'
 		try:
 			zip_data = Archive.ZipFromURL(url)
-			
+
 			for name in zip_data.Names():
 				data	= zip_data[name]
 				parts   = name.split('/')
@@ -79,12 +79,12 @@ def update(url, ver):
 		except Exception as exception:
 			msg = 'Error: ' + str(exception)
 			msgH = 'Update failed'
-		
+
 		try:
 			os.remove(zip_data)
 		except Exception as exception:
 			pass
-		
+
 		return ObjectContainer(header=msgH, message=msg)
 	else:
 		return ObjectContainer(header='Update failed', message='Version not found !')
@@ -130,7 +130,7 @@ def test_version():
 		result_str	 = common.VERSION + ' ({0} available)'.format(latest_version)
 		result_summary = 'Click to update to latest version.'
 	return (latest_version, result, result_str, result_summary + ' - ' + summ, tag)
-	
+
 def get_test_thumb(result):
     if result == True:
         return R(ICON_OK)
@@ -147,7 +147,7 @@ def getOnlyVersionNumber(verStr):
 	latest_version_str = latest_version_str.lower().replace('ver.','')
 	latest_version_str = latest_version_str.lower().replace('v','')
 	return latest_version_str
-	
+
 # clean tag names based on your release naming convention
 def cleanSummary(summary):
 	summary = summary['value']

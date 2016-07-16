@@ -1,4 +1,4 @@
-import string, re
+#!/usr/bin/env python
 
 HTTP_HEADERS = {
 	'Accept	text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -16,25 +16,28 @@ def NormalizeURL(url):
 
 ########################################################################################
 def MetadataObjectForURL(url):
-	
+
 	urls = url.split('&VidRes=')
 	furl = urls[0]
 	res =  urls[1].replace('p','')
 	#Log("url-----------" + furl)
-	
+
 	title = urls[2]
 	summary = urls[3]
-		
+
+	time_stamp = int(Datetime.TimestampFromDatetime(Datetime.Now()))
+	thumb = '/:/plugins/com.plexapp.plugins.rainierland/resources/%s?t=%s' %(urls[4], str(time_stamp))
+
 	return VideoClipObject(
 		title = title,
 		url = furl,
 		summary = summary,
-		thumb = Resource.ContentsOfURLWithFallback(url = 'thumb', fallback='icon-cover.png')
+		thumb = thumb
 	)
-	
+
 ########################################################################################
 def MediaObjectsForURL(url):
-	
+
 	if 'VidRes' in url:
 		urls = url.split('&VidRes=')
 		furl = urls[0]
@@ -67,7 +70,7 @@ def MediaObjectsForURL(url):
 					parts = [PartObject(key=Callback(PlayVideo, url=furl))]
 				)
 			]
-	
+
 
 ########################################################################################
 @indirect
