@@ -233,6 +233,8 @@ def EpisodeDetail(title, url, thumb, summary):
 
 	try:
 		fvidUrl = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//@src")[0]
+		if 'http' not in fvidUrl:
+			fvidUrl = BASE_URL + fvidUrl
 		page_data0 = HTTP.Request(fvidUrl).content
 	except:
 		try:

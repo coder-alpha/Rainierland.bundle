@@ -46,5 +46,5 @@ Known Issues
 
 Acknowledgements
 ==============
-Thanks to [jwsolve](https://github.com/jwsolve) for inputs
-Credits to [Twoure] (https://github.com/coder-alpha/Rainierland.bundle/pull/1)
+- Thanks to [jwsolve](https://github.com/jwsolve) for inputs
+- Credits to [Twoure] (https://github.com/coder-alpha/Rainierland.bundle/pull/1) for fixes and improvements [Check our his fork here] (https://github.com/Twoure/Rainierland.bundle)
