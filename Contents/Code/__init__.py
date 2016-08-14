@@ -9,6 +9,7 @@ import updater
 import shutil
 import requests
 import cfscrape
+import re
 
 TITLE = common.TITLE
 PREFIX = common.PREFIX
@@ -222,6 +223,7 @@ def ShowCategory(title, url, page_count, search):
 @route(PREFIX + "/episodedetail")
 def EpisodeDetail(title, url, thumb, summary):
 
+	summary = re.sub(r'[^0-9a-zA-Z \-/.:+&!()]', '?', summary)
 	title = title.replace('–',' : ')
 	title = unicode(title)
 	rthumb = DownloadThumbAndReturnLink(thumb)
@@ -231,7 +233,7 @@ def EpisodeDetail(title, url, thumb, summary):
 
 	try:
 		fvidUrl = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//@src")[0]
-		page_data0 = HTTP.Request(BASE_URL + '/' + fvidUrl.replace('/js','js')).content
+		page_data0 = HTTP.Request(fvidUrl).content
 	except:
 		try:
 			page_data0 = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//text()")[0]

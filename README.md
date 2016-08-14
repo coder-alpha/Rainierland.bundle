@@ -3,6 +3,8 @@ Rainierland.bundle
 
 This is a plugin that creates a new channel in Plex Media Server to view content indexed by the website www.rainierland.com
 
+[Plex Support Thread] (https://forums.plex.tv/discussion/165757/rel-rainierland-channel)
+
 System Requirements
 ===================
 
@@ -45,3 +47,4 @@ Known Issues
 Acknowledgements
 ==============
 Thanks to [jwsolve](https://github.com/jwsolve) for inputs
+Credits to [Twoure] (https://github.com/coder-alpha/Rainierland.bundle/pull/1)
