@@ -10,6 +10,11 @@ import shutil
 import requests
 import cfscrape
 import re
+import urllib2
+
+global_request_timeout = 10
+
+GOOD_RESPONSE_CODES = ['200','206']
 
 TITLE = common.TITLE
 PREFIX = common.PREFIX
@@ -93,23 +98,23 @@ def SortMenu(title, page_count):
 		for each in elem:
 			url = each.xpath(".//div[@class='thumb']//@href")[0]
 			#Log("url -------- " + url)
-			title = each.xpath(".//div[@class='thumb']//a//@title")[0]
-			#Log("title -------- " + title)
+			ttitle = each.xpath(".//div[@class='thumb']//a//@title")[0]
+			#Log("ttitle -------- " + ttitle)
 			thumb = each.xpath(".//div[@class='thumb']//img//@src")[0]
 			#Log("thumb -------- " + thumb)
 			summary = each.xpath(".//div[@class='data']//p[@class='entry-summary']//text()")[0]
 			#Log("summary -------- " + summary)
 
 			oc.add(DirectoryObject(
-				key = Callback(EpisodeDetail, title = title, url = url, thumb = thumb, summary = summary),
-				title = title,
+				key = Callback(EpisodeDetail, title = ttitle, url = url, thumb = thumb, summary = summary),
+				title = ttitle,
 				summary = summary,
 				thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 				)
 			)
 		page_n = page_data.xpath(".//div[@class='wp-pagenavi']//span[@class='pages']//text()")[0]
 		oc.add(NextPageObject(
-			key = Callback(ShowCategory, title = title, url = BASE_URL + '/browse', page_count = int(page_count) + 1, search=''),
+			key = Callback(ShowCategory, title = title, url = BASE_URL + '/browse', page_count = int(page_count) + 1, search='', cat = title),
 			title = page_n + " >>",
 			thumb = R(ICON_NEXT)
 			)
@@ -148,7 +153,7 @@ def SortMenu(title, page_count):
 				url = each.xpath(".//@href")[0]
 				title = each.xpath(".//text()")[0] + ' (' + each.xpath(".//@title")[0].replace('topics','items') + ')'
 				oc.add(DirectoryObject(
-					key = Callback(ShowCategory, title = title, url = url, page_count = int(page_count) + 1, search=''),
+					key = Callback(ShowCategory, title = title, url = url, page_count = int(page_count) + 1, search='', cat = title),
 					title = title
 					)
 				)
@@ -158,7 +163,7 @@ def SortMenu(title, page_count):
 				url = each.xpath(".//a//@href")[0]
 				title = each.xpath(".//text()")[0]
 				oc.add(DirectoryObject(
-					key = Callback(ShowCategory, title = unicode(title), url = url, page_count = int(page_count) + 1, search=''),
+					key = Callback(ShowCategory, title = unicode(title), url = url, page_count = int(page_count) + 1, search='', cat = title),
 					title = title
 					)
 				)
@@ -169,9 +174,9 @@ def SortMenu(title, page_count):
 # Creates page url from category and creates objects from that page
 
 @route(PREFIX + "/showcategory")
-def ShowCategory(title, url, page_count, search):
+def ShowCategory(title, url, page_count, search, cat):
 
-	oc = ObjectContainer(title2 = title)
+	oc = ObjectContainer(title2 = cat)
 	page_n = ''
 	try:
 		furl = url
@@ -184,15 +189,15 @@ def ShowCategory(title, url, page_count, search):
 		for each in elem:
 			furl = each.xpath(".//div[@class='thumb']//@href")[0]
 			#Log("furl -------- " + furl)
-			title = each.xpath(".//div[@class='thumb']//a//@title")[0]
-			#Log("title -------- " + title)
+			ttitle = each.xpath(".//div[@class='thumb']//a//@title")[0]
+			#Log("ttitle -------- " + ttitle)
 			thumb = each.xpath(".//div[@class='thumb']//img//@src")[0]
 			#Log("thumb -------- " + thumb)
 			summary = each.xpath(".//div[@class='data']//p[@class='entry-summary']//text()")[0]
 			#Log("summary -------- " + summary)
 			oc.add(DirectoryObject(
-				key = Callback(EpisodeDetail, title = title, url = furl, thumb = thumb, summary = summary),
-				title = title,
+				key = Callback(EpisodeDetail, title = ttitle, url = furl, thumb = thumb, summary = summary),
+				title = ttitle,
 				summary = summary,
 				thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 				)
@@ -202,13 +207,13 @@ def ShowCategory(title, url, page_count, search):
 		url = url
 
 	oc.add(NextPageObject(
-		key = Callback(ShowCategory, title = title, url = url, page_count = int(page_count) + 1, search=search),
+		key = Callback(ShowCategory, title = cat, url = url, page_count = int(page_count) + 1, search=search, cat = cat),
 		title = page_n + " >>",
 		thumb = R(ICON_NEXT)
 			)
 		)
 	oc.add(DirectoryObject(
-		key = Callback(ShowMenu, title = title),
+		key = Callback(ShowMenu, title = cat),
 		title = 'Back to Home Menu',
 		thumb = R(ICON)
 			)
@@ -223,7 +228,7 @@ def ShowCategory(title, url, page_count, search):
 @route(PREFIX + "/episodedetail")
 def EpisodeDetail(title, url, thumb, summary):
 
-	summary = re.sub(r'[^0-9a-zA-Z \-/.:+&!()]', '?', summary)
+	summary = re.sub(r'[^0-9a-zA-Z \-/.,\':+&!()]', '?', summary)
 	title = title.replace('–',' : ')
 	title = unicode(title)
 	rthumb = DownloadThumbAndReturnLink(thumb)
@@ -241,6 +246,8 @@ def EpisodeDetail(title, url, thumb, summary):
 			page_data0 = page_data.xpath(".//div[@class='screen fluid-width-video-wrapper']//script//text()")[0]
 		except:
 			pass
+			
+	#Log(page_data0)
 
 	try:
 		page_data = page_data0
@@ -252,8 +259,11 @@ def EpisodeDetail(title, url, thumb, summary):
 			for eachVid in vidUrl:
 				vUrl = eachVid.xpath(".//@src")[0]
 
-				if 'http' in vUrl:
+				if 'http' in vUrl and 'rainierland' not in vUrl:
 					#Log("vUrl ---------- " + vUrl)
+					status = ' [Offline]'
+					if GetHttpStatus(vUrl) in GOOD_RESPONSE_CODES:
+						status = ' [Online]'
 					res = '720p'
 					try:
 						res = eachVid.xpath(".//@data-res")[0]
@@ -263,7 +273,7 @@ def EpisodeDetail(title, url, thumb, summary):
 					try:
 						oc.add(VideoClipObject(
 							url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary + '&VidRes=' + rthumb,
-							title = title + ' ' + res,
+							title = title + ' ' + res + status,
 							thumb = R(rthumb),
 							art = R(rthumb),
 							summary = summary
@@ -284,8 +294,11 @@ def EpisodeDetail(title, url, thumb, summary):
 			for eachVid in vidUrl:
 				vUrl = eachVid.xpath(".//@src")[0]
 
-				if 'http' in vUrl:
+				if 'http' in vUrl and 'rainierland' not in vUrl:
 					#Log("vUrl ---------- " + vUrl)
+					status = ' [Offline]'
+					if GetHttpStatus(vUrl) in GOOD_RESPONSE_CODES:
+						status = ' [Online]'
 					res = '720p'
 					try:
 						res = eachVid.xpath(".//@data-res")[0]
@@ -295,7 +308,7 @@ def EpisodeDetail(title, url, thumb, summary):
 					try:
 						oc.add(VideoClipObject(
 							url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary + '&VidRes=' + rthumb,
-							title = title + ' ' + res,
+							title = title + ' ' + res + status,
 							thumb = R(rthumb),
 							art = R(rthumb),
 							summary = summary
@@ -314,10 +327,14 @@ def EpisodeDetail(title, url, thumb, summary):
 			page_data = page_data.replace('\';document.write(v);','')
 			elem_data = HTML.ElementFromString(page_data)
 			vidUrl = elem_data.xpath(".//source")
+			#Log("vidUrl ---------- " + vidUrl)
 			for eachVid in vidUrl:
 				vUrl = eachVid.xpath(".//@src")[0]
-				if 'http' in vUrl:
+				if 'http' in vUrl and 'rainierland' not in vUrl:
 					#Log("vUrl ---------- " + vUrl)
+					status = ' [Offline]'
+					if GetHttpStatus(vUrl) in GOOD_RESPONSE_CODES:
+						status = ' [Online]'
 					res = '720p'
 					try:
 						res = eachVid.xpath(".//@data-res")[0]
@@ -326,7 +343,7 @@ def EpisodeDetail(title, url, thumb, summary):
 					try:
 						oc.add(VideoClipObject(
 							url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary + '&VidRes=' + rthumb,
-							title = title + ' ' + res,
+							title = title + ' ' + res + status,
 							thumb = R(rthumb),
 							art = R(rthumb),
 							summary = summary
@@ -369,11 +386,14 @@ def EpisodeDetail(title, url, thumb, summary):
 				c=0
 				for eachVid in vidUrl:
 					vUrl = eachVid.replace('&amp','')
-					if 'http' in vUrl:
+					if 'http' in vUrl and 'rainierland' not in vUrl:
 
 						keys = fmts[c].split('/')
 						#Log("vUrl ---------- " + vUrl)
-
+						status = ' [Offline]'
+						if GetHttpStatus(vUrl) in GOOD_RESPONSE_CODES:
+							status = ' [Online]'
+						
 						res_wh = keys[1]
 						res_h = res_wh.split('x')[1]
 						res = 'sd'
@@ -388,7 +408,7 @@ def EpisodeDetail(title, url, thumb, summary):
 						try:
 							oc.add(VideoClipObject(
 								url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary + '&VidRes=' + rthumb,
-								title = title + ' (' + res_wh + ')',
+								title = title + ' (' + res_wh + ')' + status,
 								thumb = R(rthumb),
 								art = R(rthumb),
 								summary = summary
@@ -408,14 +428,17 @@ def EpisodeDetail(title, url, thumb, summary):
 			#Log(page_data)
 			if 'openload.io' in page_data or 'openload.co' in page_data:
 				elem_data = HTML.ElementFromString(page_data)
-				vidUrl = elem_data.xpath(".//@src")[0]
-				#Log("vidUrl ---------- " + vidUrl)
-				if 'http' in vidUrl:
+				vUrl = elem_data.xpath(".//@src")[0]
+				#Log("vUrl ---------- " + vUrl)
+				if 'http' in vUrl and 'rainierland' not in vUrl:
+					status = ' [Offline]'
+					if GetHttpStatus(vUrl) in GOOD_RESPONSE_CODES:
+						status = ' [Online]'
 					res = '720p'
 					try:
 						oc.add(VideoClipObject(
-							url = vidUrl,
-							title = title + ' ' + res,
+							url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary + '&VidRes=' + rthumb,
+							title = title + ' ' + res + status,
 							thumb = Resource.ContentsOfURLWithFallback(url='', fallback=DownloadThumbAndReturnLink(thumb)),
 							art = DownloadThumbAndReturnLink(thumb),
 							summary = summary
@@ -436,7 +459,7 @@ def EpisodeDetail(title, url, thumb, summary):
 				vidUrl = page_data.split(';')
 				for eachVid in vidUrl:
 					vUrl = eachVid
-					if 'http' in vUrl:
+					if 'http' in vUrl and 'rainierland' not in vUrl:
 
 						res = '720p'
 						vUrl = vUrl.replace('\n','')
@@ -456,11 +479,13 @@ def EpisodeDetail(title, url, thumb, summary):
 						vUrl = vUrl.lstrip()
 
 						#Log(vUrl)
-
+						status = ' [Offline]'
+						if GetHttpStatus(vUrl) in GOOD_RESPONSE_CODES:
+							status = ' [Online]'
 						try:
 							oc.add(VideoClipObject(
 								url = vUrl + '&VidRes=' + res + '&VidRes=' + title + '&VidRes=' + summary + '&VidRes=' + rthumb,
-								title = title + ' ' + res,
+								title = title + ' ' + res + status,
 								thumb = R(rthumb),
 								art = R(rthumb),
 								summary = summary
@@ -523,7 +548,7 @@ def Bookmarks(title):
 				#Log('this is a show list')
 				ctitle = html.xpath('//title/text()')[0].split('| Rainierland')[0].strip()
 				oc.add(DirectoryObject(
-					key=Callback(ShowCategory, title=ctitle, url=url, page_count=1, search=''),
+					key=Callback(ShowCategory, title=ctitle, url=url, page_count=1, search='', cat = title),
 					title=ctitle
 					)
 				)
@@ -749,6 +774,18 @@ def DeleteDownloadThumb():
 				continue
 
 	return ObjectContainer(header="Cached Thumbnails", message=msg)
+	
+####################################################################################################
+# Get HTTP response code (200 == good)
+@route(PREFIX + '/gethttpstatus')
+def GetHttpStatus(url):
+	try:
+		conn = urllib2.urlopen(url, timeout = global_request_timeout)
+		resp = str(conn.getcode())
+	except StandardError:
+		resp = '0'
+	Log(url + " : " + resp)
+	return resp
 
 ####################################################################################################
 def SetupCache():

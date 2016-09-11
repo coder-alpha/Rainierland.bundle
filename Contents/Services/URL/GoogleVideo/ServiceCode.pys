@@ -76,4 +76,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url):
 
-	return IndirectResponse(VideoClipObject, key=url)
+	try:
+		return IndirectResponse(VideoClipObject, key=url)
+	except:
+		raise Ex.MediaNotAvailable
