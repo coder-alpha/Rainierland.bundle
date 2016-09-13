@@ -92,83 +92,88 @@ def ShowMenu(title):
 def SortMenu(title, page_count):
 	oc = ObjectContainer(title2=title)
 
-	if title == 'Browse All':
-		page_data = HTML.ElementFromURL(BASE_URL + '/browse')			
-		elem = page_data.xpath(".//div[@class='nag cf']//div[contains(@class, 'post-')]")
-		for each in elem:
-			url = each.xpath(".//div[@class='thumb']//@href")[0]
-			#Log("url -------- " + url)
-			ttitle = each.xpath(".//div[@class='thumb']//a//@title")[0]
-			#Log("ttitle -------- " + ttitle)
-			thumb = each.xpath(".//div[@class='thumb']//img//@src")[0]
-			#Log("thumb -------- " + thumb)
-			summary = each.xpath(".//div[@class='data']//p[@class='entry-summary']//text()")[0]
-			#Log("summary -------- " + summary)
-
-			oc.add(DirectoryObject(
-				key = Callback(EpisodeDetail, title = ttitle, url = url, thumb = thumb, summary = summary),
-				title = ttitle,
-				summary = summary,
-				thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
-				)
-			)
-		page_n = page_data.xpath(".//div[@class='wp-pagenavi']//span[@class='pages']//text()")[0]
-		oc.add(NextPageObject(
-			key = Callback(ShowCategory, title = title, url = BASE_URL + '/browse', page_count = int(page_count) + 1, search='', cat = title),
-			title = page_n + " >>",
-			thumb = R(ICON_NEXT)
-			)
-		)
-	else:
-		page_data = HTML.ElementFromURL(BASE_URL)
-		if title == 'Newest':
+	try:
+		if title == 'Browse All':
+			page_data = HTML.ElementFromURL(BASE_URL + '/browse')			
 			elem = page_data.xpath(".//div[@class='nag cf']//div[contains(@class, 'post-')]")
 			for each in elem:
 				url = each.xpath(".//div[@class='thumb']//@href")[0]
 				#Log("url -------- " + url)
-				title = each.xpath(".//div[@class='thumb']//a//@title")[0]
-				#Log("title -------- " + title)
+				ttitle = each.xpath(".//div[@class='thumb']//a//@title")[0]
+				#Log("ttitle -------- " + ttitle)
 				thumb = each.xpath(".//div[@class='thumb']//img//@src")[0]
 				#Log("thumb -------- " + thumb)
-
-				#response = requests.get(thumb, stream=True, headers=HTTP.Headers)
-				#Log("response code: " + str(response.status_code))
-				#if response.status_code == 200:
-				#	response.encoding = 'UTF-8'
-				#	response.raw.decode_content = True
-				#	mythumb = response.text
-
 				summary = each.xpath(".//div[@class='data']//p[@class='entry-summary']//text()")[0]
 				#Log("summary -------- " + summary)
+
 				oc.add(DirectoryObject(
-					key = Callback(EpisodeDetail, title = title, url = url, thumb = thumb, summary = summary),
-					title = title,
+					key = Callback(EpisodeDetail, title = ttitle, url = url, thumb = thumb, summary = summary),
+					title = ttitle,
 					summary = summary,
 					thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
 					)
 				)
-		elif title == 'Browse By Genre':
-			elem = page_data.xpath(".//div[@class='tagcloud']//a")
-			for each in elem:
-				url = each.xpath(".//@href")[0]
-				title = each.xpath(".//text()")[0] + ' (' + each.xpath(".//@title")[0].replace('topics','items') + ')'
-				oc.add(DirectoryObject(
-					key = Callback(ShowCategory, title = title, url = url, page_count = int(page_count) + 1, search='', cat = title),
-					title = title
-					)
+			page_n = page_data.xpath(".//div[@class='wp-pagenavi']//span[@class='pages']//text()")[0]
+			oc.add(NextPageObject(
+				key = Callback(ShowCategory, title = title, url = BASE_URL + '/browse', page_count = int(page_count) + 1, search='', cat = title),
+				title = page_n + " >>",
+				thumb = R(ICON_NEXT)
 				)
-		elif title == 'Categories':
-			elem = page_data.xpath(".//div[@id='categories-2']//ul//li")
-			for each in elem:
-				url = each.xpath(".//a//@href")[0]
-				title = each.xpath(".//text()")[0]
-				oc.add(DirectoryObject(
-					key = Callback(ShowCategory, title = unicode(title), url = url, page_count = int(page_count) + 1, search='', cat = title),
-					title = title
-					)
-				)
+			)
+		else:
+			page_data = HTML.ElementFromURL(BASE_URL)
+			if title == 'Newest':
+				elem = page_data.xpath(".//div[@class='nag cf']//div[contains(@class, 'post-')]")
+				for each in elem:
+					url = each.xpath(".//div[@class='thumb']//@href")[0]
+					#Log("url -------- " + url)
+					title = each.xpath(".//div[@class='thumb']//a//@title")[0]
+					#Log("title -------- " + title)
+					thumb = each.xpath(".//div[@class='thumb']//img//@src")[0]
+					#Log("thumb -------- " + thumb)
 
-	return oc
+					#response = requests.get(thumb, stream=True, headers=HTTP.Headers)
+					#Log("response code: " + str(response.status_code))
+					#if response.status_code == 200:
+					#	response.encoding = 'UTF-8'
+					#	response.raw.decode_content = True
+					#	mythumb = response.text
+
+					summary = each.xpath(".//div[@class='data']//p[@class='entry-summary']//text()")[0]
+					#Log("summary -------- " + summary)
+					oc.add(DirectoryObject(
+						key = Callback(EpisodeDetail, title = title, url = url, thumb = thumb, summary = summary),
+						title = title,
+						summary = summary,
+						thumb = Resource.ContentsOfURLWithFallback(url = '', fallback=DownloadThumbAndReturnLink(thumb))
+						)
+					)
+			elif title == 'Browse By Genre':
+				elem = page_data.xpath(".//div[@class='tagcloud']//a")
+				for each in elem:
+					url = each.xpath(".//@href")[0]
+					title = each.xpath(".//text()")[0] + ' (' + each.xpath(".//@title")[0].replace('topics','items') + ')'
+					oc.add(DirectoryObject(
+						key = Callback(ShowCategory, title = title, url = url, page_count = int(page_count) + 1, search='', cat = title),
+						title = title
+						)
+					)
+			elif title == 'Categories':
+				elem = page_data.xpath(".//div[@id='categories-2']//ul//li")
+				for each in elem:
+					url = each.xpath(".//a//@href")[0]
+					title = each.xpath(".//text()")[0]
+					oc.add(DirectoryObject(
+						key = Callback(ShowCategory, title = unicode(title), url = url, page_count = int(page_count) + 1, search='', cat = title),
+						title = title
+						)
+					)
+
+		return oc
+	except:
+		SetupCache(True)
+	return ObjectContainer(header='Error', message='Error retrieving content. Please try again.')
+	
 
 ######################################################################################
 # Creates page url from category and creates objects from that page
@@ -788,14 +793,14 @@ def GetHttpStatus(url):
 	return resp
 
 ####################################################################################################
-def SetupCache():
+def SetupCache(ForceUpdate=True):
 	"""Cookie Cache handler"""
 
 	current_timestamp = Datetime.TimestampFromDatetime(Datetime.Now())
 	if not Dict['cookies']:
 		Dict['cookies'] = {'expire': '1466626689', 'current_cookies': 'na'}
 	
-	if current_timestamp >= int(Dict['cookies']['expire']):
+	if ForceUpdate or current_timestamp >= int(Dict['cookies']['expire']):
 		HTTP.ClearCookies()
 		Log('Updating Cookies')
 		cookies, ua = cfscrape.get_cookie_string(BASE_URL + '/', HTTP.Headers['User-Agent'])
