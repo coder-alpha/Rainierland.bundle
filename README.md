@@ -38,8 +38,8 @@ How To Install
 
 Known Issues
 ==============
-- Thumbnails of items are not fetched due to 302 redirection (cookie/header not being used)
-- Some movies will not play, currently depending on where hosted or removed.
+- ~~Thumbnails of items are not fetched due to 302 redirection (cookie/header not being used)~~ Thumbnails are now cached into the Resource folder and can be deleted via the plugin.
+- Some movies will not play, currently depending on where hosted or removed. Source is now marked with [Online]/[Offline] using a file checker.
 - Bookmarks do not store thumbnails, so videos accessed by Bookmark list will have no thumbs
   - Also the video page does not host a thumbnail, so cannot parse for one
   - Bookmarks would need to be re-done to include more metadata for the thumb to be included

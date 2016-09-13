@@ -46,9 +46,9 @@ def Start():
 	DirectoryObject.art = R(ART)
 	VideoClipObject.thumb = R(ICON_MOVIES)
 	VideoClipObject.art = R(ART)
-
+	
 	HTTP.ClearCache()
-	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0'
+	HTTP.Headers['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36"
 	HTTP.Headers['Referer'] = 'http://rainierland.com/'
 	Log(common.TITLE + ' v.' + common.VERSION)
 
@@ -93,7 +93,7 @@ def SortMenu(title, page_count):
 	oc = ObjectContainer(title2=title)
 
 	if title == 'Browse All':
-		page_data = HTML.ElementFromURL(BASE_URL + '/browse')
+		page_data = HTML.ElementFromURL(BASE_URL + '/browse')			
 		elem = page_data.xpath(".//div[@class='nag cf']//div[contains(@class, 'post-')]")
 		for each in elem:
 			url = each.xpath(".//div[@class='thumb']//@href")[0]
@@ -784,7 +784,7 @@ def GetHttpStatus(url):
 		resp = str(conn.getcode())
 	except StandardError:
 		resp = '0'
-	Log(url + " : " + resp)
+	#Log(url + " : " + resp)
 	return resp
 
 ####################################################################################################
@@ -794,8 +794,9 @@ def SetupCache():
 	current_timestamp = Datetime.TimestampFromDatetime(Datetime.Now())
 	if not Dict['cookies']:
 		Dict['cookies'] = {'expire': '1466626689', 'current_cookies': 'na'}
-
+	
 	if current_timestamp >= int(Dict['cookies']['expire']):
+		HTTP.ClearCookies()
 		Log('Updating Cookies')
 		cookies, ua = cfscrape.get_cookie_string(BASE_URL + '/', HTTP.Headers['User-Agent'])
 		Dict['cookies']['current_cookies'] = cookies
@@ -809,7 +810,6 @@ def SetupCache():
 			Log.Warn('SetupCache Warning: cookies have no "cf_clearance" cookie')
 			expire = Datetime.TimestampFromDatetime(Datetime.Now())
 
-		HTTP.ClearCookies()
 		HTTP.Headers['Cookie'] = cookies
 		Dict['cookies']['expire'] = '%i' %expire
 		Dict.Save()
@@ -821,5 +821,8 @@ def SetupCache():
 		expire_datetime = Datetime.FromTimestamp(int(Dict['cookies']['expire']))
 
 		Log('Time left until Cookies need to be updated = %s' %str(expire_datetime - current_datetime))
+		
+	#Log("Current system time: " + str(current_timestamp))
+	#Log("Current cookie time: " + (Dict['cookies']['expire']))
 
 	return
